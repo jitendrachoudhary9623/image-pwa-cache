@@ -1,0 +1,12 @@
+{
+  "api": {
+    "products": "https://fakestoreapi.com/products"
+  },
+  "images": {
+    "logo": "https://www.bharatgo.com/_next/static/media/Bharatgowhite6.818339d1.png"
+  },
+  "cacheNames": {
+    "products": "products-cache",
+    "images": "images-cache"
+  }
+}
