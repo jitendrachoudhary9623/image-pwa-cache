@@ -16,11 +16,17 @@ const useImageCaching = () => {
       if (cachedResponse) {
         return URL.createObjectURL(await cachedResponse.blob());
       }
+      if (!navigator.onLine) {
+        console.warn('Offline and image not cached:', url);
+        return null;
+      }
+      await cacheImage(url);
+      return url;
     } catch (error) {
       console.error('Error getting cached image:', url, error);
+      return null;
     }
-    return url;
-  }, []);
+  }, [cacheImage]);
 
   return { cacheImage, getCachedImage };
 };

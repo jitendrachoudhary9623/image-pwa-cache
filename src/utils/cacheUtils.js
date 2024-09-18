@@ -15,17 +15,24 @@ export const putInCache = async (cacheName, key, value) => {
 };
 
 export const fetchAndCache = async (cacheName, url) => {
-  const response = await fetch(url);
-  const responseClone = response.clone();
-  await putInCache(cacheName, url, responseClone);
-  return response;
+  try {
+    const response = await fetch(url);
+    const responseClone = response.clone();
+    await putInCache(cacheName, url, responseClone);
+    return response;
+  } catch (error) {
+    console.error('Error fetching and caching:', error);
+    return null;
+  }
 };
 
 export const getCachedOrFetch = async (cacheName, url) => {
   const cachedResponse = await getFromCache(cacheName, url);
-  if (cachedResponse && !navigator.onLine) {
+  if (cachedResponse) {
     return cachedResponse;
-  } else {
-    return await fetchAndCache(cacheName, url);
   }
+  if (!navigator.onLine) {
+    throw new Error('Offline and no cached data available');
+  }
+  return await fetchAndCache(cacheName, url);
 };

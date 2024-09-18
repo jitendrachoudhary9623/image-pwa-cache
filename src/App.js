@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.css';
 import useOnlineStatus from './hooks/useOnlineStatus';
 import useProductFetching from './hooks/useProductFetching';
@@ -7,8 +7,9 @@ import config from './config.json';
 
 function App() {
   const isOnline = useOnlineStatus();
-  const { products, isLoading, refetchProducts } = useProductFetching();
+  const { products, isLoading, error, refetchProducts } = useProductFetching();
   const { cacheImage, getCachedImage } = useImageCaching();
+  const [logoUrl, setLogoUrl] = useState(config.images.logo);
 
   useEffect(() => {
     if (isOnline) {
@@ -17,26 +18,40 @@ function App() {
   }, [isOnline, refetchProducts]);
 
   useEffect(() => {
-    // Cache the logo
-    cacheImage(config.images.logo);
-    // Cache product images
-    products.forEach(product => cacheImage(product.image));
-  }, [products, cacheImage]);
+    const cacheImages = async () => {
+      // Cache the logo
+      await cacheImage(config.images.logo);
+      // Cache product images
+      products.forEach(product => cacheImage(product.image));
+    };
+    
+    if (isOnline) {
+      cacheImages();
+    }
+  }, [isOnline, products, cacheImage]);
+
+  useEffect(() => {
+    const updateLogoUrl = async () => {
+      const cachedLogoUrl = await getCachedImage(config.images.logo);
+      if (cachedLogoUrl) {
+        setLogoUrl(cachedLogoUrl);
+      }
+    };
+    updateLogoUrl();
+  }, [getCachedImage]);
 
   const getImage = async (url) => {
-    return isOnline ? url : await getCachedImage(url);
+    const cachedUrl = await getCachedImage(url);
+    return cachedUrl || url;
   };
 
   return (
     <div className="App">
       <header className="App-header">
         <img 
-          src={config.images.logo} 
+          src={logoUrl}
           alt="BharatGo Logo" 
           className="App-logo" 
-          onError={async (e) => {
-            e.target.src = await getImage(config.images.logo);
-          }}
         />
         <h1>Offline-Capable Store</h1>
         <p>Status: {isOnline ? 'Online' : 'Offline'}</p>
@@ -44,6 +59,8 @@ function App() {
       <main>
         {isLoading ? (
           <p>Loading products...</p>
+        ) : error ? (
+          <p>{error}</p>
         ) : (
           <div className="product-grid">
             {products.map((product) => (
